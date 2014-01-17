@@ -4,8 +4,10 @@ class TestA(object):
     CONTENT_TYPE = 'application/xml'
 
     def index(self, request):
-        return { 'TestA'  : request.args['test1_id'] }
+        return { 'TestA'  : request.args.get('test1_id','orphan') }
 
     def show(self, request):
-        return { 'TestA show'  : request.args['test1_id'], 
-        'TestA show2'  : request.args['id'] }
+        return  {'root':
+                    {'TestA show'  : request.args.get('test1_id','no_parent'),
+                     'TestA show2'  : request.args['id'] }
+                   }

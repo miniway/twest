@@ -79,8 +79,14 @@ class RestResource(Resource):
         self.rest_children = {}
         for res in children:
             self.rest_children[res[0]] = RestResource(*res)
+        if not self.cls:
+            for res in children:
+                self.putChild(res[0], RestResource(*res))
 
     def buildModule(self, module):
+
+        if not module:
+            return None
 
         sp = module.split('.')
         try:
