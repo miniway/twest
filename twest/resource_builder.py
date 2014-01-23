@@ -73,6 +73,7 @@ class RestResource(Resource):
         self.name = name
         self.options = options
         self.module = module
+        self.err = None
         self.cls = self.buildModule(module)
         self.supported = dict([ (m,getattr(self.cls, m)) for m in self.METHODS if hasattr(self.cls, m) ])
 
@@ -94,6 +95,7 @@ class RestResource(Resource):
             for m in sp[1:]:
                 mod = getattr(mod, m)
         except (ImportError, AttributeError), e:
+            self.err = e
             return None
 
         return mod
@@ -101,7 +103,7 @@ class RestResource(Resource):
 
     def render(self, request):
         if self.cls == None:
-            return self.notFound(request, 'module', self.module)
+            return self.notFound(request, self.err, self.module)
 
         print 'X', self.cls, request.prepath, request.postpath
         method_name = self.getMethod(request)
@@ -116,10 +118,8 @@ class RestResource(Resource):
             return middleware(self.supported[method_name],
                               content_type = content_type, charset = charset) (inst, request)
 
-        return self.notFound(request, 'method', method_name)
+        return self.notFound(request, 'method not implemented', method_name)
 
-#Y xxx ['v1', 'xxx'] ['aa']
-#Z aa ['v1', 'xxx'] []
     def getChild(self, path, request):
         print 'YY', path, request.prepath, request.postpath
         if not path: # ends with '/'
@@ -147,6 +147,10 @@ class RestResource(Resource):
                 name = 'show'
             else:
                 name = 'index'
+        elif method == 'POST':
+            name = 'create'
+        elif method == 'PUT':
+            name = 'update'
         print 'Q', name, request.prepath, request.postpath
         #if name == 'GET'
         #m = getattr(self, 'render_' + nativeString(request.method), None)
@@ -154,10 +158,10 @@ class RestResource(Resource):
         return name
 
     @middleware
-    def notFound(self, request, target, name):
+    def notFound(self, request, msg, name):
         data = {
             'code' : NOT_FOUND,
-            'brief' : "%s not implemented" % target,
+            'brief' : "%s" % msg,
             'detail': name
         }
         request.setResponseCode(NOT_FOUND)
