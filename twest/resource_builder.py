@@ -18,7 +18,13 @@ DECODERS = {
 }
 try:
     import xmltodict
-    ENCODERS['application/xml'] = xmltodict.unparse
+
+    def xmldumps(result):
+        if len(result) != 1:
+            result = { 'response' : result }
+        return xmltodict.unparse(result)
+        
+    ENCODERS['application/xml'] = xmldumps
     DECODERS['application/xml'] = xmltodict.parse
 except ImportError:
     pass
