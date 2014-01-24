@@ -7,7 +7,8 @@ from functools import wraps
 from twisted.web.server import Site, NOT_DONE_YET
 from twisted.python.compat import nativeString
 from twisted.web.resource import Resource, NoResource, ErrorPage
-from twisted.web._responses import FORBIDDEN, NOT_FOUND
+from twisted.web._responses import FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR
+from twisted.python import log
 
 ENCODERS = {
     'application/json' : json.dumps
@@ -54,9 +55,19 @@ def middleware(f, content_type=DEFAULT_CONTENT_TYPE, charset=DEFAULT_CHARSET, en
         request = args[1]
         if request.method in ['POST', 'PUT']:
             decoder = DECODERS.get(request.getHeader('content-type'), lambda s:s)
-            request.body = decoder(request.content)
-        result = f(*args, **kwargs)
+            request.body = decoder(request.content.read())
+        try:
+            result = f(*args, **kwargs)
+        except Exception, exc:
+            log.err()
+            result = {
+                'code' : INTERNAL_SERVER_ERROR,
+                'brief' : "%s" % exc,
+                'detail': request.path
+            }
+            request.setResponseCode(INTERNAL_SERVER_ERROR)
         setHeader(request)
+            
         if result != NOT_DONE_YET:
             encoder = encoder_ if encoder_ != None else ENCODERS.get(content_type, lambda s:s)
             result = encoder(result).encode(charset)
@@ -105,7 +116,6 @@ class RestResource(Resource):
         if self.cls == None:
             return self.notFound(request, self.err, self.module)
 
-        print 'X', self.cls, request.prepath, request.postpath
         method_name = self.getMethod(request)
         if method_name in self.supported:
             try:
@@ -121,7 +131,6 @@ class RestResource(Resource):
         return self.notFound(request, 'method not implemented', method_name)
 
     def getChild(self, path, request):
-        print 'YY', path, request.prepath, request.postpath
         if not path: # ends with '/'
             return self
 
@@ -130,9 +139,7 @@ class RestResource(Resource):
             return self
             
         request.args['%s_id' % self.name ] = path
-        print 'Y', path, request.prepath, request.postpath
         path = request.postpath.pop(0)
-        print 'Z', path, request.prepath, request.postpath
 
         if path in self.rest_children:
             return self.rest_children[path]
@@ -151,7 +158,6 @@ class RestResource(Resource):
             name = 'create'
         elif method == 'PUT':
             name = 'update'
-        print 'Q', name, request.prepath, request.postpath
         #if name == 'GET'
         #m = getattr(self, 'render_' + nativeString(request.method), None)
 
@@ -165,6 +171,17 @@ class RestResource(Resource):
             'detail': name
         }
         request.setResponseCode(NOT_FOUND)
+        return data
+
+    @middleware
+    def error(self, request, exc):
+        log.err()
+        data = {
+            'code' : INTERNAL_SERVER_ERROR,
+            'brief' : "%s" % exc,
+            'detail': request.path
+        }
+        request.setResponseCode(INTERNAL_SERVER_ERROR)
         return data
 
 ErrorPage.render = middleware(ErrorPage.render, encoder_=lambda s:s)
