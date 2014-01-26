@@ -68,7 +68,7 @@ def middleware(f, content_type=DEFAULT_CONTENT_TYPE, charset=DEFAULT_CHARSET, en
             log.err()
             result = {
                 'code' : INTERNAL_SERVER_ERROR,
-                'brief' : "%s" % exc,
+                'message' : "%s" % exc,
                 'detail': request.path
             }
             request.setResponseCode(INTERNAL_SERVER_ERROR)
@@ -173,7 +173,7 @@ class RestResource(Resource):
     def notFound(self, request, msg, name):
         data = {
             'code' : NOT_FOUND,
-            'brief' : "%s" % msg,
+            'message' : "%s" % msg,
             'detail': name
         }
         request.setResponseCode(NOT_FOUND)
@@ -184,7 +184,7 @@ class RestResource(Resource):
         log.err()
         data = {
             'code' : INTERNAL_SERVER_ERROR,
-            'brief' : "%s" % exc,
+            'message' : "%s" % exc,
             'detail': request.path
         }
         request.setResponseCode(INTERNAL_SERVER_ERROR)
