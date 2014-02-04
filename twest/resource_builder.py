@@ -59,7 +59,7 @@ def middleware(f, content_type=DEFAULT_CONTENT_TYPE, charset=DEFAULT_CHARSET, en
     @wraps(f)
     def inner(*args, **kwargs):
         request = args[1]
-        if request.method in ['POST', 'PUT']:
+        if request.method != 'GET':
             decoder = DECODERS.get(request.getHeader('content-type'), lambda s:s)
             request.body = decoder(request.content.read())
         try:
@@ -164,8 +164,8 @@ class RestResource(Resource):
             name = 'create'
         elif method == 'PUT':
             name = 'update'
-        #if name == 'GET'
-        #m = getattr(self, 'render_' + nativeString(request.method), None)
+        elif method == 'DELETE':
+            name = 'delete'
 
         return name
 
