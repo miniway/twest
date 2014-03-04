@@ -56,7 +56,7 @@ ErrorPage.template = """{
 """
 def middleware(f, content_type=DEFAULT_CONTENT_TYPE, charset=DEFAULT_CHARSET, encoder_=None):
     def setHeader(request):
-        request.setHeader(b"content-type", b"%s; charset=%s" % (content_type, charset) )
+        request.setHeader("content-type", "%s; charset=%s" % (content_type, charset) )
 
     @wraps(f)
     def inner(*args, **kwargs):
@@ -77,7 +77,10 @@ def middleware(f, content_type=DEFAULT_CONTENT_TYPE, charset=DEFAULT_CHARSET, en
         setHeader(request)
             
         if result != NOT_DONE_YET:
-            encoder = encoder_ if encoder_ != None else ENCODERS.get(content_type, lambda s:s)
+            if encoder_ is not None:
+                encoder = encoder_ 
+            else:
+                encoder = ENCODERS.get(content_type, lambda s:s)
             result = encoder(result).encode(charset)
         return result
     return inner
