@@ -3,6 +3,7 @@ try:
 except ImportError:
     import json
 
+import urllib
 from functools import wraps
 from twisted.web.server import Site, NOT_DONE_YET
 from twisted.python.compat import nativeString
@@ -11,7 +12,8 @@ from twisted.web._responses import FORBIDDEN, NOT_FOUND, INTERNAL_SERVER_ERROR
 from twisted.python import log
 
 ENCODERS = {
-    'application/json' : json.dumps
+    'application/json' : json.dumps,
+    'application/x-www-form-urlencoded' : urllib.urlencode
 }
 DECODERS = {
     'application/json' : json.loads
