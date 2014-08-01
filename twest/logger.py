@@ -1,6 +1,7 @@
 import logging
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
+from twest.config import get_conf
 
 class LevelFileLogObserver(log.FileLogObserver):
 
@@ -19,7 +20,11 @@ class LevelFileLogObserver(log.FileLogObserver):
             log.FileLogObserver.emit(self, eventDict)
 
 def logger():
-    f = logfile.DailyLogFile("twest.log", '/tmp', maxRotatedFiles=100)
+    log_dir = get_conf('log', 'dir', '/tmp')
+    log_file = get_conf('log', 'file', 'twest.log')
+    max_rotate = int(get_conf('log', 'max_rotate', 100))
+
+    f = logfile.DailyLogFile(log_file, log_dir, maxRotatedFiles=max_rotate)
     flobserver = LevelFileLogObserver(f)
     return flobserver.emit
 

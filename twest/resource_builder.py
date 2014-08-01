@@ -111,11 +111,8 @@ class RestResource(Resource):
         if not module:
             return None
 
-        sp = module.split('.')
         try:
-            mod = __import__('.'.join(sp[:-1]))
-            for m in sp[1:]:
-                mod = getattr(mod, m)
+            mod = _import(module, False)
         except (ImportError, AttributeError), e:
             self.err = e
             return None
@@ -217,7 +214,38 @@ class RootResource(Resource):
         
         return NoResource(path)
 
-def build(root_path, paths):
+
+def _import(module_path, module = True):
+    sp = module_path.split('.')
+    if not module:
+        module_path = '.'.join(sp[:-1])
+    mod = __import__(module_path)
+    for m in sp[1:]:
+        mod = getattr(mod, m)
+    return mod
+
+def build(route_path):
+    if not route_path:
+        route_path = 'routes'
+
+    mod = _import(route_path)
+    root_path = getattr(mod, 'ROOT', '/')
+    paths = getattr(mod, 'RESOURCES')
     root = RootResource(root_path, paths)
 
     return Site(root);
+
+def build_timers(timer_path):
+    if not timer_path:
+        timers_path = 'timers'
+
+    try:
+        mod = _import(timer_path)
+    except:
+        return []
+
+    timers = []
+    for timer in getattr(mod, 'TIMERS'):
+        timers.append((int(timer[0]), _import(timer[1], False)))
+
+    return timers
