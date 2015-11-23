@@ -52,6 +52,12 @@ class Config(object):
             value = default
         return value
 
+    def sections(self):
+        return self.config.sections()
+
+    def has_section(self, section):
+        return self.config.has_section(section)
+
     get = get_conf
     get_config = get_conf
     get_configs = get_confs
